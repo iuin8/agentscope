@@ -47,7 +47,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
-      - "8000:8000"
+      # Host port for the backend. Override via BACKEND_PORT if 8000 is taken.
+      # The container always listens on 8000; only the host mapping changes.
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       # Persist agent workspaces (LocalWorkspaceManager basedir) across restarts.
       - backend-workspaces:/app/examples/agent_service/workspaces
@@ -59,8 +61,9 @@ services:
       dockerfile: Dockerfile
       args:
         # Baked into the static bundle. Points the browser at the backend
-        # exposed on the host. Override for a remote backend.
-        VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:8000}
+        # exposed on the host; defaults to follow BACKEND_PORT automatically.
+        # Override VITE_SERVER_URL directly for a remote backend.
+        VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:${BACKEND_PORT:-8000}}
     restart: unless-stopped
     depends_on:
       # Wait until the backend passes its healthcheck, so the zero-config UI

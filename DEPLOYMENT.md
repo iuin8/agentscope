@@ -55,10 +55,14 @@ cp .env.example .env
 - **`WEBUI_PORT`** — host port for the Web UI (default `8080`). Set it if
   `8080` is already taken, e.g. `WEBUI_PORT=8090 docker compose up`. Redis is
   not published to the host, so it won't clash with a local redis on `6379`.
+- **`BACKEND_PORT`** — host port for the backend (default `8000`). Set it if
+  `8000` is already taken, e.g. `BACKEND_PORT=9000 docker compose up --build`.
+  The container still listens on 8000 internally, and `VITE_SERVER_URL` follows
+  this automatically — so rebuild the frontend (`--build`) when you change it.
 - **`VITE_SERVER_URL`** — where the *browser* reaches the backend. It is baked
-  into the frontend bundle at build time (default `http://localhost:8000`).
-  If you expose the backend elsewhere, set this and rebuild:
-  `docker compose up --build frontend`.
+  into the frontend bundle at build time and by default follows `BACKEND_PORT`
+  (`http://localhost:8000`). Set it explicitly only for a remote/custom backend,
+  then rebuild: `docker compose up --build frontend`.
 
 ## Notes
 
