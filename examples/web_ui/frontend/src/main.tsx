@@ -1,3 +1,5 @@
+import './lib/polyfill-crypto'; // must run before any crypto.randomUUID() call
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
