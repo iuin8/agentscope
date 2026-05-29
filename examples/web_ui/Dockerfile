@@ -41,7 +41,9 @@ COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
 EXPOSE 80
 
+# Use 127.0.0.1 (not localhost): busybox wget resolves localhost to ::1 first
+# and nginx only listens on IPv4, which would fail the probe.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+    CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
