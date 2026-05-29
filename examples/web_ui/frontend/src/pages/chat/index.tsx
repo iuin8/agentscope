@@ -14,6 +14,7 @@ import { useParams } from 'react-router-dom';
 
 import type { ChatModelConfig } from '@/api';
 import type { SessionRecord } from '@/api';
+import { getBaseUrl } from '@/api/client';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { AgentDialog } from '@/components/dialog/AgentDialog';
 import { CreateCredentialDialog } from '@/components/dialog/CreateCredentialDialog';
@@ -280,7 +281,7 @@ const ChatPageInner = () => {
 					<SidebarHeader>
 						<div className="flex flex-col gap-y-2">
 							<span className="text-muted-foreground text-xs">
-								{localStorage.getItem('server_url')}
+								{getBaseUrl()}
 							</span>
 							<div className="flex flex-row gap-x-2 items-center">
 								<Select

@@ -39,8 +39,8 @@ if os.getenv("AMAP_API_KEY"):
 
 app = create_app(
     RedisStorage(
-        host="localhost",
-        port=6379,
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", "6379")),
     ),
     workspace_manager=LocalWorkspaceManager(
         basedir=os.path.join(
@@ -62,10 +62,11 @@ app = create_app(
 
 
 if __name__ == "__main__":
-    # Start the service
+    # Start the service. ``reload`` defaults to on for local development;
+    # set ``UVICORN_RELOAD=false`` (as docker-compose does) in containers.
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
+        port=int(os.getenv("PORT", "8000")),
+        reload=os.getenv("UVICORN_RELOAD", "true").lower() == "true",
     )

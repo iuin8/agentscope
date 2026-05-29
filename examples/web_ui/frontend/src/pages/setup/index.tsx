@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { getBaseUrl } from '@/api/client.ts';
 import { Button } from '@/components/ui/button.tsx';
 import {
 	Card,
@@ -20,7 +21,7 @@ interface Props {
 
 export const SetupPage = ({ onComplete, className }: Props) => {
 	const { t } = useTranslation();
-	const [url, setUrl] = useState(() => localStorage.getItem('server_url') ?? '');
+	const [url, setUrl] = useState(() => getBaseUrl());
 	const [username, setUsername] = useState(() => localStorage.getItem('username') ?? '');
 
 	const handleSubmit = (e: React.FormEvent) => {

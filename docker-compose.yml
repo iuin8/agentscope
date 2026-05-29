@@ -1,0 +1,76 @@
+# AgentScope full-stack deployment: Redis + agent service (backend) + Web UI.
+#
+# One-command start:
+#
+#   docker compose up --build
+#
+# Then open http://localhost:8080  (the Web UI is pre-pointed at the backend
+# on http://localhost:8000). Optional API keys go in a .env file next to this
+# one — see .env.example.
+
+name: agentscope
+
+services:
+  # --- Storage backend -----------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Not published to the host: only the backend reaches it via the "redis"
+    # service name. This avoids clashing with a redis already running on the
+    # host's 6379. For redis-cli access add e.g. ports: ["127.0.0.1:6380:6379"].
+
+  # --- Agent service (FastAPI, port 8000) ----------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: examples/agent_service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      UVICORN_RELOAD: "false"
+      # API keys are normally configured per-credential in the Web UI, but you
+      # may also inject them here via a .env file (all optional).
+      AMAP_API_KEY: ${AMAP_API_KEY:-}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist agent workspaces (LocalWorkspaceManager basedir) across restarts.
+      - backend-workspaces:/app/examples/agent_service/workspaces
+
+  # --- Web UI (static React app served by nginx, port 8080) ----------------
+  frontend:
+    build:
+      context: ./examples/web_ui
+      dockerfile: Dockerfile
+      args:
+        # Baked into the static bundle. Points the browser at the backend
+        # exposed on the host. Override for a remote backend.
+        VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      # Wait until the backend passes its healthcheck, so the zero-config UI
+      # never fires API calls (VITE_SERVER_URL is baked in) at a cold backend.
+      backend:
+        condition: service_healthy
+    ports:
+      # Host port for the Web UI. Override via WEBUI_PORT if 8080 is taken.
+      - "${WEBUI_PORT:-8080}:80"
+
+volumes:
+  redis-data:
+  backend-workspaces:

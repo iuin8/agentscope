@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { createBrowserRouter, RouterProvider, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
+import { getBaseUrl } from '@/api/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { buildChatTour } from '@/components/tour/chatTourSteps';
 import { TourCard } from '@/components/tour/TourCard';
@@ -39,7 +40,7 @@ const router = createBrowserRouter([
 
 function App() {
 	const { t } = useTranslation();
-	const [setupComplete, setSetupComplete] = useState(() => !!localStorage.getItem('server_url'));
+	const [setupComplete, setSetupComplete] = useState(() => !!getBaseUrl());
 	const tours = useMemo(() => [buildChatTour(t)], [t]);
 
 	if (!setupComplete) {
