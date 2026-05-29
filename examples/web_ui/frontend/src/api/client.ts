@@ -29,7 +29,9 @@ interface RequestOptions {
 }
 
 function buildHeaders(hasBody: boolean): Record<string, string> {
-	const headers: Record<string, string> = { 'X-User-ID': getUserId() };
+	// HTTP headers must be ISO-8859-1; percent-encode so non-ASCII usernames
+	// (e.g. Chinese) don't crash fetch. The backend decodes via unquote.
+	const headers: Record<string, string> = { 'X-User-ID': encodeURIComponent(getUserId()) };
 	if (hasBody) headers['Content-Type'] = 'application/json';
 	return headers;
 }

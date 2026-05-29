@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Shared FastAPI dependencies for the agentscope app."""
+from urllib.parse import unquote
+
 from fastapi import Header, HTTPException, Request, status
 
 from ._manager import (
@@ -38,7 +40,9 @@ async def get_current_user_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="X-User-ID header is required.",
         )
-    return x_user_id
+    # The client percent-encodes the header so non-ASCII user IDs survive the
+    # ISO-8859-1 header constraint; decode back to the original value here.
+    return unquote(x_user_id)
 
 
 async def get_storage(request: Request) -> StorageBase:
