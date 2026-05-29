@@ -18,9 +18,10 @@ From the repository root:
 docker compose up --build
 ```
 
-Then open **http://localhost:8080**. The Web UI is pre-configured to talk to
-the backend at `http://localhost:8000`, so you can start chatting right away —
-no manual server URL setup required.
+Then open **http://localhost:8080** — or **http://&lt;server-ip&gt;:8080** if you
+deployed to a remote host. The Web UI reaches the backend same-origin through
+nginx's `/api` reverse proxy, so it works on any host/IP with **no CORS issues
+and no server-URL setup**. You're only asked for a username on first visit.
 
 Stop everything with `Ctrl+C`, or in another terminal:
 
@@ -33,12 +34,14 @@ docker compose down -v       # also drop the redis + workspace volumes
 
 | Service    | Image / build                         | Host port | Purpose                              |
 | ---------- | ------------------------------------- | --------- | ------------------------------------ |
-| `redis`    | `redis:7-alpine`                      | 6379*     | Storage backend for the agent service |
-| `backend`  | `examples/agent_service/Dockerfile`   | 8000      | FastAPI agent service (multi-tenant) |
-| `frontend` | `examples/web_ui/Dockerfile`          | 8080      | React Web UI served by nginx         |
+| `redis`    | `redis:7-alpine`                      | —         | Storage backend (internal only)      |
+| `backend`  | `examples/agent_service/Dockerfile`   | 8000      | FastAPI agent service (direct/debug) |
+| `frontend` | `examples/web_ui/Dockerfile`          | 8080      | React Web UI + `/api` proxy (nginx)  |
 
-\* Redis is bound to `127.0.0.1` only, for local debugging. Remove its `ports`
-entry in `docker-compose.yml` if you don't need host access.
+Redis is not published to the host (only the backend reaches it on the compose
+network), so it never clashes with a local redis on 6379. The backend port is
+published for direct API access / debugging — the Web UI itself goes through the
+frontend's `/api` proxy and doesn't need it.
 
 ## Configuration
 
@@ -55,17 +58,21 @@ cp .env.example .env
 - **`WEBUI_PORT`** — host port for the Web UI (default `8080`). Set it if
   `8080` is already taken, e.g. `WEBUI_PORT=8090 docker compose up`. Redis is
   not published to the host, so it won't clash with a local redis on `6379`.
-- **`BACKEND_PORT`** — host port for the backend (default `8000`). Set it if
-  `8000` is already taken, e.g. `BACKEND_PORT=9000 docker compose up --build`.
-  The container still listens on 8000 internally, and `VITE_SERVER_URL` follows
-  this automatically — so rebuild the frontend (`--build`) when you change it.
-- **`VITE_SERVER_URL`** — where the *browser* reaches the backend. It is baked
-  into the frontend bundle at build time and by default follows `BACKEND_PORT`
-  (`http://localhost:8000`). Set it explicitly only for a remote/custom backend,
-  then rebuild: `docker compose up --build frontend`.
+- **`BACKEND_PORT`** — host port for *direct* backend access (default `8000`).
+  The Web UI doesn't need it (it uses the `/api` proxy); set it only if 8000 is
+  taken on the host. The container always listens on 8000 internally.
+- **`VITE_SERVER_URL`** — optional, empty by default. The frontend calls the
+  backend same-origin via the `/api` proxy (recommended). Set it only to bake a
+  direct URL to a remote/standalone backend into the bundle, then rebuild:
+  `docker compose up --build frontend`.
 
 ## Notes
 
+- **Same-origin API** — the frontend's nginx reverse-proxies `/api/*` to the
+  backend, so the browser only ever talks to the Web UI's own origin. No CORS,
+  and the deployment works unchanged on localhost, a LAN IP, or a domain. The
+  frontend still supports an explicit backend URL (Setup page / `server_url` /
+  `VITE_SERVER_URL`) for connecting to a separate backend.
 - **Data persistence** — Redis data and agent workspaces live in named volumes
   (`redis-data`, `backend-workspaces`) and survive restarts.
 - **Backend image size** — it ships Chromium so the `browser-use` MCP works out

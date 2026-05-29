@@ -281,7 +281,7 @@ const ChatPageInner = () => {
 					<SidebarHeader>
 						<div className="flex flex-col gap-y-2">
 							<span className="text-muted-foreground text-xs">
-								{getBaseUrl()}
+								{getBaseUrl() || `${window.location.origin}/api`}
 							</span>
 							<div className="flex flex-row gap-x-2 items-center">
 								<Select

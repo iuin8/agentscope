@@ -5,6 +5,18 @@ export const getBaseUrl = () =>
 export const getUserId = () => localStorage.getItem('username') ?? '';
 
 /**
+ * Resolve a request URL. With no explicit backend configured, requests go to
+ * the same origin under `/api` (reverse-proxied to the backend by the
+ * frontend's nginx) — so it works on any host/IP with no cross-origin call.
+ * An explicit `server_url` / `VITE_SERVER_URL` overrides this to talk to a
+ * backend directly (no `/api` prefix).
+ */
+function resolveUrl(path: string): URL {
+	const override = getBaseUrl().replace(/\/+$/, '');
+	return new URL(override ? override + path : `/api${path}`, window.location.origin);
+}
+
+/**
  * Structured error thrown for non-2xx HTTP responses.
  * `message` contains the human-readable detail extracted from the backend.
  */
@@ -51,7 +63,7 @@ async function extractErrorDetail(res: Response): Promise<string> {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
 	const { method = 'GET', body, params, silent = false } = options;
-	const url = new URL(path, getBaseUrl());
+	const url = resolveUrl(path);
 	if (params) {
 		Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 	}
@@ -78,7 +90,7 @@ async function streamRequest(
 	options: RequestOptions & { signal?: AbortSignal } = {},
 ): Promise<Response> {
 	const { method = 'GET', body, params, signal, silent = false } = options;
-	const url = new URL(path, getBaseUrl());
+	const url = resolveUrl(path);
 	if (params) {
 		Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 	}

@@ -52,8 +52,10 @@ export const SetupPage = ({ onComplete, className }: Props) => {
 										placeholder={t('setup.serverUrlPlaceholder')}
 										value={url}
 										onChange={(e) => setUrl(e.target.value)}
-										required
 									/>
+									<FieldDescription>
+										{t('setup.serverUrlOptional')}
+									</FieldDescription>
 								</Field>
 								<Field>
 									<FieldLabel htmlFor="username-input">
